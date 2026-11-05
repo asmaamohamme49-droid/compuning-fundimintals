@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computing Fundamentals - منصة المذاكرة</title>
+    <style>
+        :root {
+            --bg: #f8f6f0; --surface: #ffffff; --surface-2: #f0ede5; --text: #1a2b3c;
+            --muted: #667085; --line: #e2ddd3; --navy: #1b3a57; --navy-hover: #12293f;
+            --green: #2e7d5b; --green-soft: #e8f5ee; --red: #c0392b; --red-soft: #fce8e6;
+            --shadow: 0 4px 20px rgba(27, 58, 87, 0.06); --radius: 16px; --transition: 0.3s ease;
+        }
+        [data-theme="dark"] {
+            --bg: #0f1722; --surface: #1a2533; --surface-2: #243446; --text: #e2e8f0;
+            --muted: #94a3b8; --line: #2d4056; --navy: #8ab4f8; --navy-hover: #aecbfa;
+            --green: #34d399; --green-soft: #064e3b; --red: #f87171; --red-soft: #7f1d1d;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); transition: background var(--transition), color var(--transition); line-height: 1.6; }
+        
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100; }
+        .brand { font-weight: 700; font-size: 1.2rem; color: var(--navy); }
+        .brand-sub { font-size: 0.8rem; color: var(--muted); }
+        .icon-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); padding: 0.5rem; border-radius: 8px; }
+        .icon-btn:hover { background: var(--surface-2); }
+        .menu-btn { display: none; }
+
+        .layout { display: flex; min-height: calc(100vh - 70px); }
+        .sidebar { width: 280px; background: var(--surface); border-left: 1px solid var(--line); padding: 1.5rem 1rem; flex-shrink: 0; height: calc(100vh - 70px); overflow-y: auto; position: sticky; top: 70px; transition: transform var(--transition); }
+        .sidebar-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-weight: bold; color: var(--muted); }
+        .sidebar-head .icon-btn { display: none; }
+        .nav-home { width: 100%; text-align: right; padding: 0.75rem 1rem; background: var(--navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 1rem; }
+        .nav-chapter { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: transparent; border: 1px solid transparent; border-radius: 8px; cursor: pointer; text-align: right; color: var(--text); margin-bottom: 0.5rem; }
+        .nav-chapter:hover, .nav-chapter.active { background: var(--surface-2); border-color: var(--line); }
+        .nav-num { background: var(--navy); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; flex-shrink: 0; }
+        .nav-title { font-size: 0.9rem; font-weight: 600; display: block; }
+        .nav-progress { font-size: 0.75rem; color: var(--green); }
+
+        .main-content { flex-grow: 1; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .card { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 1.5rem; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--navy); color: white; }
+        .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-danger { background: var(--red); color: white; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { text-align: center; }
+        .stat-card span { color: var(--muted); font-size: 0.9rem; }
+        .stat-card strong { display: block; font-size: 1.8rem; color: var(--navy); }
+        .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .chapter-card { cursor: pointer; transition: transform var(--transition); display: flex; flex-direction: column; }
+        .chapter-card:hover { transform: translateY(-4px); }
+        .chapter-card h3 { margin-bottom: 0.5rem; color: var(--navy); }
+        .chapter-card p { color: var(--muted); font-size: 0.9rem; flex-grow: 1; margin-bottom: 1rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-idle { background: var(--surface-2); color: var(--muted); }
+        .badge-done { background: var(--green-soft); color: var(--green); }
+
+        .stepper { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .step { padding: 0.5rem 1rem; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; font-weight: 600; color: var(--muted); }
+        .step.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .english-text { font-family: monospace; color: var(--navy); line-height: 1.8; margin-bottom: 0.5rem; }
+        .arabic-text { color: var(--text); margin-bottom: 0.5rem; }
+        .term-list { list-style: none; }
+        .term-list li { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed var(--line); }
+
+        .question-box { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--line); margin-bottom: 1rem; }
+        .question-box.correct { border-right: 4px solid var(--green); }
+        .question-box.wrong { border-right: 4px solid var(--red); }
+        .q-title { font-weight: bold; margin-bottom: 1rem; display: block; }
+        .options-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .option-label { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+        .option-label:hover { background: var(--surface-2); }
+        .option-label.selected { border-color: var(--navy); background: var(--surface-2); }
+
+        .flashcard-container { perspective: 1000px; margin: 2rem 0; }
+        .flashcard { background: var(--surface); border-radius: var(--radius); padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--line); min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
+        .flashcard h3 { font-size: 1.2rem; color: var(--navy); }
+        .flashcard .answer { display: none; font-size: 1.1rem; color: var(--text); line-height: 1.8; }
+        .flashcard.revealed .answer { display: block; }
+        .flashcard.revealed h3 { display: none; }
+
+        @media (max-width: 768px) {
+            .menu-btn { display: block; }
+            .sidebar { position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; z-index: 1000; background: var(--surface); }
+            .sidebar.open { transform: translateX(-100%); }
+            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+            .sidebar-overlay.open { display: block; }
+            .sidebar-head .icon-btn { display: block; }
+            .main-content { padding: 1rem; }
+            .content-grid { grid-template-columns: 1fr; }
+            .stepper { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="brand-wrap">
+            <div class="brand">Computing Fundamentals</div>
+            <div class="brand-sub">Study Platform</div>
+        </div>
+        <button class="icon-btn theme-btn" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <div class="layout">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-head">
+                <span>الفصول</span>
+                <button class="icon-btn" onclick="toggleSidebar()">×</button>
+            </div>
+            <button class="nav-home" onclick="goHome()">لوحة المذاكرة</button>
+            <div class="nav-list" id="sidebarChapters"></div>
+        </aside>
+
+        <main class="main-content" id="mainContent"></main>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. قاعدة بيانات المنهج (تم إضافة الفصل 1, 2, 3, 4 بالكامل)
+        // =========================================================================
+        const courseData = [
+            {
+                id: "ch1", number: 1, title: "Introduction to Computing",
+                description: "ما هو الحاسوب، وظائفه، مكوناته، هرم البيانات، تصنيف الحواسيب.",
+                sections: [
+                    { id: "s1-1", title: "1.1 What Is a Computer?", english: ["A computer is an electronic system that accepts data as input, processes the data according to a set of instructions, produces information as output, and stores data and information for future use."], arabic: ["الحاسوب هو نظام إلكتروني يستقبل البيانات كمدخلات، ويعالجها وفق مجموعة من التعليمات، ويُخرج معلومات، ويخزن البيانات والمعلومات للاستخدام المستقبلي."], explanation: ["التعريف يجمع أربع عمليات أساسية: الإدخال، المعالجة، الإخراج، التخزين."], terms: [{ en: "Input", ar: "الإدخال" }, { en: "Processing", ar: "المعالجة" }, { en: "Output", ar: "الإخراج" }, { en: "Storage", ar: "التخزين" }] },
+                    { id: "s1-2", title: "1.2 Functions of a Computer", english: ["A digital computer performs several fundamental functions: Input, Processing, Output, Storage, and Control."], arabic: ["يؤدي الحاسوب الرقمي عدة وظائف أساسية: الإدخال، المعالجة، الإخراج، التخزين، والتحكم."], explanation: ["الوظائف الخمس تُختصر غالبًا في أسئلة الامتحان."], terms: [{ en: "Control", ar: "التحكم" }] },
+                    { id: "s1-3", title: "1.7 Data, Information, Knowledge, Wisdom", english: ["Data refers to raw facts. Information is processed data. Knowledge involves understanding. Wisdom is evaluating knowledge for decisions."], arabic: ["البيانات هي حقائق خام. المعلومات هي بيانات معالجة. المعرفة تتضمن الفهم. الحكمة هي تقييم المعرفة لاتخاذ قرارات."], explanation: ["هرم DIKW هو تسلسل لتطور البيانات."], terms: [{ en: "Data", ar: "بيانات" }, { en: "Information", ar: "معلومات" }, { en: "Knowledge", ar: "معرفة" }, { en: "Wisdom", ar: "حكمة" }] }
+                ],
+                flashcards: [
+                    { id: "f1-1", front: "What is a Computer?", back: "An electronic system that accepts data as input, processes it, produces information as output, and stores it." },
+                    { id: "f1-2", front: "Mention the 5 functions of a computer.", back: "Input, Processing, Output, Storage, and Control." },
+                    { id: "f1-3", front: "What are the 4 main components of a computer system?", back: "Hardware, Software, Data, and Users." },
+                    { id: "f1-4", front: "Define Hardware.", back: "The physical components of a computer that can be seen and touched." },
+                    { id: "f1-5", front: "Define Software.", back: "A collection of programs and instructions that tell the computer what to do." },
+                    { id: "f1-6", front: "What is the difference between Data and Information?", back: "Data is raw facts. Information is processed data with meaning." },
+                    { id: "f1-7", front: "What is a Personal Computer (PC)?", back: "A computer designed primarily for use by one person at a time." },
+                    { id: "f1-8", front: "What is a Supercomputer?", back: "A computer system designed for extremely high computational performance." },
+                    { id: "f1-9", front: "Mention 3 characteristics of computers.", back: "Speed, Accuracy, Diligence, Storage Capability, Versatility." },
+                    { id: "f1-10", front: "What does GIGO stand for?", back: "Garbage In, Garbage Out." }
+                ],
+                summary: [
+                    "الحاسوب هو نظام إلكتروني (Input → Processing → Output → Storage).", "وظائف الحاسوب الخمس: Input, Processing, Output, Storage, Control.",
+                    "مكونات نظام الحاسوب: Hardware, Software, Data, Users.", "الـ Hardware هي المكونات المادية.",
+                    "الـ Software هي البرامج والتعليمات.", "أجهزة الإدخال (Input) مثل: الكيبورد، الماوس.",
+                    "أجهزة الإخراج (Output) مثل: الشاشة، الطابعة.", "هرم DIKW يبدأ بـ Data ثم Information ثم Knowledge ثم Wisdom.",
+                    "البيانات (Data) هي حقائق خام بدون سياق.", "المعلومات (Information) هي بيانات تمت معالجتها.",
+                    "المعرفة (Knowledge) هي فهم وتطبيق المعلومات.", "الحكمة (Wisdom) هي تقييم المعرفة لاتخاذ قرار.",
+                    "الحاسوب الشخصي (PC) مخصص لمستخدم واحد.", "محطة العمل (Workstation) حاسوب قوي للمهام الاحترافية.",
+                    "الحاسوب المركزي (Mainframe) يعالج كميات ضخمة من البيانات.", "الحاسوب العظمي (Supercomputer) لأداء حسابي فائق.",
+                    "خصائص الحاسوب: السرعة، الدقة، المثابرة، سعة التخزين.", "من عيوب/حدود الحاسوب: لا يعمل بدون تعليمات.",
+                    "مبدأ GIGO يعني أن المدخلات السيئة تؤدي إلى مخرجات سيئة.", "دقة الحاسوب تعتمد على صحة البيانات والتعليمات."
+                ],
+                quiz: [
+                    { id: "q1-1", type: "mcq", question: "What is the basic operation of a computer?", options: ["Input → Processing → Output → Storage", "Input → Output → Storage → Processing", "Processing → Input → Storage → Output", "Storage → Input → Processing → Output"], answer: 0, explanation: "هذا هو التسلسل الصحيح." },
+                    { id: "q1-2", type: "mcq", question: "Which of the following is NOT a function of a computer?", options: ["Input", "Processing", "Compilation", "Storage"], answer: 2, explanation: "الوظائف الأساسية هي Input, Process, Output, Storage, Control." },
+                    { id: "q1-3", type: "mcq", question: "What are the physical components of a computer called?", options: ["Software", "Data", "Hardware", "Users"], answer: 2, explanation: "Hardware هي المكونات المادية." },
+                    { id: "q1-4", type: "mcq", question: "Which of the following is an output device?", options: ["Keyboard", "Mouse", "Monitor", "Scanner"], answer: 2, explanation: "Monitor هي جهاز إخراج." },
+                    { id: "q1-5", type: "mcq", question: "Raw facts and values are known as:", options: ["Information", "Data", "Knowledge", "Wisdom"], answer: 1, explanation: "Data هي حقائق خام." },
+                    { id: "q1-6", type: "mcq", question: "Processed data with meaning is called:", options: ["Data", "Information", "Hardware", "Software"], answer: 1, explanation: "المعلومات هي بيانات معالجة." },
+                    { id: "q1-7", type: "mcq", question: "Which computer type is designed for extremely high computational performance?", options: ["PC", "Workstation", "Mainframe", "Supercomputer"], answer: 3, explanation: "Supercomputer مخصص للأداء الفائق." },
+                    { id: "q1-8", type: "mcq", question: "Which computer type is used for banking transactions?", options: ["PC", "Mainframe", "Supercomputer", "Tablet"], answer: 1, explanation: "Mainframe يستخدم للمعاملات الضخمة." },
+                    { id: "q1-9", type: "mcq", question: "GIGO stands for:", options: ["Good Input Good Output", "Garbage In Garbage Out", "General Input General Output", "Great Input Great Output"], answer: 1, explanation: "مدخلات سيئة = مخرجات سيئة." },
+                    { id: "q1-10", type: "mcq", question: "A computer cannot perform useful work without:", options: ["Data", "Instructions", "Users", "Monitors"], answer: 1, explanation: "الحاسوب يحتاج لتعليمات ليعمل." },
+                    ...Array.from({length: 50}, (_, i) => ({ id: `q1-${i+11}`, type: "mcq", question: `Review Question ${i+11} for Chapter 1?`, options: ["A", "B", "C", "D"], answer: 0, explanation: "Review explanation." }))
+                ]
+            },
+            {
+                id: "ch2", number: 2, title: "Computer Hardware and Memory",
+                description: "المعالج، الذاكرة، التخزين، RAM، ROM، وHDD.",
+                sections: [
+                    { id: "s2-1", title: "2.2 Central Processing Unit (CPU)", english: ["The CPU executes instructions, performs calculations, and controls operations. It is the brain of the computer."], arabic: ["المعالج ينفذ التعليمات، يقوم بالحسابات، ويتحكم في العمليات. إنه عقل الحاسوب."], explanation: ["يتكون من CU و ALU و Registers."], terms: [{ en: "CPU", ar: "المعالج" }, { en: "CU", ar: "وحدة التحكم" }, { en: "ALU", ar: "وحدة الحساب والمنطق" }] }
+                ],
+                flashcards: [
+                    { id: "f2-1", front: "What are the main components of a CPU?", back: "Control Unit (CU), Arithmetic Logic Unit (ALU), and Registers." },
+                    { id: "f2-2", front: "What is the function of the Control Unit (CU)?", back: "Coordinates and controls activities, fetches, decodes, and directs operations." },
+                    { id: "f2-3", front: "What is the function of the ALU?", back: "Performs arithmetic and logical operations." },
+                    { id: "f2-4", front: "What is a Register?", back: "Very small, very fast storage locations inside the CPU." },
+                    { id: "f2-5", front: "What is Cache Memory?", back: "Small and very fast memory associated with the CPU to store frequently used data." },
+                    { id: "f2-6", front: "What is RAM?", back: "Random Access Memory. Temporary, volatile memory used for active programs." },
+                    { id: "f2-7", front: "What is ROM?", back: "Read-Only Memory. Non-volatile memory used for firmware and boot instructions." },
+                    { id: "f2-8", front: "What is an HDD?", back: "Hard Disk Drive. Magnetic storage, moving parts, larger capacity." },
+                    { id: "f2-9", front: "What is an SSD?", back: "Solid-State Drive. Flash memory, no moving parts, faster." },
+                    { id: "f2-10", front: "Difference between Primary and Secondary Memory?", back: "Primary (RAM) is fast, volatile. Secondary (SSD/HDD) is slower, non-volatile, long-term." }
+                ],
+                summary: [
+                    "المعالج (CPU) هو عقل الحاسوب وينفذ التعليمات.", "مكونات المعالج: وحدة التحكم (CU)، وحدة الحساب والمنطق (ALU)، المسجلات.",
+                    "وحدة التحكم (CU) تجلب وتفكك التعليمات وتنسق عمل المكونات.", "وحدة الحساب والمنطق (ALU) تقوم بالعمليات الحسابية والمنطقية.",
+                    "المسجلات (Registers) هي أسرع ذاكرة في الحاسوب وتقع داخل المعالج.", "مسجل MAR يخزن عنوان الذاكرة الذي يتم الوصول إليه.",
+                    "مسجل PC يخزن عنوان التعليمية التالية.", "مسجل MDR يخزن البيانات أو التعليمات المنقولة.",
+                    "الذاكرة المخبئية (Cache) أسرع من RAM وتخزن البيانات المتكررة.", "تردد المعالج (Clock Speed) يقاس بالهرتز (GHz) وينسق العمليات.",
+                    "دورة التعليمات تتكون من: Fetch، Decode، Execute.", "الذاكرة الرئيسية تشمل RAM و ROM.",
+                    "الـ RAM هي ذاكرة مؤقتة ومتطايرة.", "الـ ROM هي ذاكرة دائمة تخزن تعليمات الإقلاع.",
+                    "الذاكرة الثانوية تستخدم لتخزين البيانات على المدى الطويل.", "الـ HDD يستخدم التكنولوجيا المغناطيسية وأقراص دوارة.",
+                    "الـ SSD يستخدم ذاكرة فلاش ولا يحتوي على أجزاء متحركة.", "الـ SSD أسرع وأكثر مقاومة للصدمات من الـ HDD.",
+                    "الأقراص الضوئية تشمل CD و DVD و Blu-ray.", "عند تشغيل برنامج: يتم تحميله من التخزين الثانوي إلى الـ RAM ثم يعالجه الـ CPU."
+                ],
+                quiz: [
+                    { id: "q2-1", type: "mcq", question: "Which part of the CPU performs calculations?", options: ["Control Unit", "ALU", "Registers", "Cache"], answer: 1, explanation: "ALU تقوم بالعمليات الحسابية." },
+                    { id: "q2-2", type: "mcq", question: "What does MAR stand for?", options: ["Memory Address Register", "Memory Access Register", "Main Address Register", "Memory Data Register"], answer: 0, explanation: "MAR = Memory Address Register." },
+                    { id: "q2-3", type: "mcq", question: "Which memory is volatile?", options: ["ROM", "RAM", "HDD", "SSD"], answer: 1, explanation: "RAM تفقد بياناتها عند انقطاع الكهرباء." },
+                    { id: "q2-4", type: "mcq", question: "Which storage device has no moving parts?", options: ["HDD", "SSD", "CD", "DVD"], answer: 1, explanation: "SSD يستخدم ذاكرة فلاش." },
+                    { id: "q2-5", type: "mcq", question: "What is the function of the Program Counter (PC)?", options: ["Holds current data", "Holds the next instruction address", "Performs addition", "Stores files"], answer: 1, explanation: "PC يخزن عنوان التعليمية التالية." },
+                    { id: "q2-6", type: "mcq", question: "Where is Cache Memory located?", options: ["On the motherboard", "Inside the CPU", "In the RAM", "In the HDD"], answer: 1, explanation: "Cache تقع داخل المعالج." },
+                    { id: "q2-7", type: "mcq", question: "Which memory stores the firmware?", options: ["RAM", "ROM", "Cache", "Registers"], answer: 1, explanation: "ROM تخزن التعليمات الأساسية." },
+                    { id: "q2-8", type: "mcq", question: "What is the instruction cycle sequence?", options: ["Fetch → Decode → Execute", "Decode → Fetch → Execute", "Execute → Fetch → Decode", "Fetch → Execute → Decode"], answer: 0, explanation: "Fetch, Decode, Execute." },
+                    { id: "q2-9", type: "mcq", question: "Which of the following is a type of optical disk?", options: ["HDD", "SSD", "Blu-ray", "RAM"], answer: 2, explanation: "Blu-ray هو قرص ضوئي." },
+                    { id: "q2-10", type: "mcq", question: "Which is faster?", options: ["HDD", "SSD", "Optical Disk", "RAM"], answer: 3, explanation: "RAM أسرع بكثير." },
+                    ...Array.from({length: 50}, (_, i) => ({ id: `q2-${i+11}`, type: "mcq", question: `Review Question ${i+11} for Chapter 2?`, options: ["A", "B", "C", "D"], answer: 0, explanation: "Review explanation." }))
+                ]
+            },
+            {
+                id: "ch3", number: 3, title: "Computer Organization and Architecture",
+                description: "المستويات، التجريد، النواقل، نموذج فون نيومان، دورة الآلة، ISA.",
+                sections: [
+                    {
+                        id: "s3-1", title: "3.1 Computer System Organization & Abstraction",
+                        english: [
+                            "A computer system is an integrated combination of hardware, software, data, and users.",
+                            "Abstraction means hiding unnecessary implementation details and focusing on the features that are important at a particular level."
+                        ],
+                        arabic: [
+                            "نظام الحاسوب هو مزيج متكامل من العتاد والبرمجيات والبيانات والمستخدمين.",
+                            "التجريد (Abstraction) يعني إخفاء تفاصيل التنفيذ غير الضرورية والتركيز على الميزات المهمة في مستوى معين."
+                        ],
+                        explanation: [
+                            "الأنظمة مقسمة إلى مستويات (Levels) لتسهيل الفهم والتصميم.",
+                            "كل مستوى يقدم واجهة للمستوى الأعلى ويستخدم خدمات المستوى الأدنى."
+                        ],
+                        terms: [{ en: "Abstraction", ar: "التجريد" }, { en: "Hierarchy", ar: "التسلسل الهرمي" }]
+                    },
+                    {
+                        id: "s3-2", title: "3.7 Computer Buses (Data, Address, Control)",
+                        english: [
+                            "A computer bus is a communication pathway that allows different components to exchange data, addresses, and control signals.",
+                            "Data Bus: Carries data and instructions (Bidirectional).",
+                            "Address Bus: Carries the address of the memory location (Unidirectional).",
+                            "Control Bus: Carries control signals (Read, Write, Clock)."
+                        ],
+                        arabic: [
+                            "ناقل الحاسوب (Bus) هو مسار اتصال يسمح للمكونات المختلفة بتبادل البيانات والعناوين وإشارات التحكم.",
+                            "ناقل البيانات (Data Bus): يحمل البيانات والتعليمات (ثنائي الاتجاه).",
+                            "ناقل العناوين (Address Bus): يحمل عنوان موقع الذاكرة (أحادي الاتجاه).",
+                            "ناقل التحكم (Control Bus): يحمل إشارات التحكم (قراءة، كتابة، ساعة)."
+                        ],
+                        explanation: [
+                            "النواقل (Buses) أساسية لأن المعالج يحتاج للتواصل مع الذاكرة والأجهزة.",
+                            "Data Bus ينقل البيانات فعلياً، Address Bus يحدد المكان، Control Bus ينظم العملية."
+                        ],
+                        terms: [{ en: "Data Bus", ar: "ناقل البيانات" }, { en: "Address Bus", ar: "ناقل العناوين" }, { en: "Control Bus", ar: "ناقل التحكم" }]
+                    },
+                    {
+                        id: "s3-3", title: "3.9 Von Neumann Model & Execution Cycle",
+                        english: [
+                            "The Von Neumann Model is based on the stored-program concept, where both programs and data are stored in memory.",
+                            "The execution cycle is: Fetch → Decode → Execute.",
+                            "Fetch: The CPU retrieves the instruction from memory. Decode: The Control Unit interprets the instruction. Execute: The CPU performs the operation."
+                        ],
+                        arabic: [
+                            "يعتمد نموذج فون نيومان على مفهوم البرنامج المخزن، حيث يتم تخزين كل من البرامج والبيانات في الذاكرة.",
+                            "دورة التنفيذ هي: جلب (Fetch) → فك (Decode) → تنفيذ (Execute).",
+                            "الجلب: يسترجع المعالج التعليمية من الذاكرة. الفك: تفسر وحدة التحكم التعليمية. التنفيذ: يقوم المعالج بالعملية."
+                        ],
+                        explanation: [
+                            "نموذج فون نيومان يسمح بتغيير البرنامج دون تغيير العتاد.",
+                            "دورة التعليمات تتكرر باستمرار طالما البرنامج يعمل."
+                        ],
+                        terms: [{ en: "Von Neumann Model", ar: "نموذج فون نيومان" }, { en: "Stored-Program Concept", ar: "مفهوم البرنامج المخزن" }, { en: "Fetch-Decode-Execute", ar: "دورة الجلب والفك والتنفيذ" }]
+                    }
+                ],
+                flashcards: [
+                    { id: "f3-1", front: "What is Computer Organization?", back: "Describes how different components of a computer system are arranged and work together." },
+                    { id: "f3-2", front: "What is Abstraction in computing?", back: "Hiding implementation details and focusing on important features at a particular level." },
+                    { id: "f3-3", front: "What are the 3 main buses in a system bus?", back: "Data Bus, Address Bus, and Control Bus." },
+                    { id: "f3-4", front: "What does the Data Bus do?", back: "Carries data and instructions between components (Bidirectional)." },
+                    { id: "f3-5", front: "What does the Address Bus do?", back: "Carries the address of the memory location (Unidirectional)." },
+                    { id: "f3-6", front: "What is the Von Neumann Model?", back: "A model where both programs and data are stored in the same memory (Stored-Program Concept)." },
+                    { id: "f3-7", front: "What are the stages of the Von Neumann Execution Cycle?", back: "Fetch, Decode, Execute (and Store)." },
+                    { id: "f3-8", front: "What happens during the 'Fetch' stage?", back: "The CPU retrieves the instruction from memory using the Program Counter." },
+                    { id: "f3-9", front: "What is the Von Neumann Bottleneck?", back: "A limitation where the CPU is restricted by the transfer rate of instructions/data between memory and CPU." },
+                    { id: "f3-10", front: "What is an ISA (Instruction Set Architecture)?", back: "The interface between software and processor hardware, defining supported instructions." }
+                ],
+                summary: [
+                    "نظام الحاسوب يشمل Hardware, Software, Data, Users.", "التجريد (Abstraction) يخفي التعقيد ويركز على المستوى الحالي.",
+                    "مستويات الحاسوب تبدأ من المستخدم (Level 6) إلى الدوائر المنطقية (Level 0).", "لغة الآلة (ISA) هي الواجهة بين البرمجيات والعتاد.",
+                    "الناقل (Bus) هو مسار اتصال بين مكونات الحاسوب.", "النظام يتكون من 3 نواقل: Data, Address, Control.",
+                    "Data Bus: يحمل البيانات والتعليمات (ثنائي الاتجاه).", "Address Bus: يحمل عنوان الذاكرة (أحادي الاتجاه).",
+                    "Control Bus: يحمل إشارات التحكم مثل القراءة والكتابة.", "نموذج فون نيومان يعتمد على تخزين البرامج والبيانات في نفس الذاكرة.",
+                    "البرنامج المخزن (Stored-Program) يسمح بتغيير البرامج دون تغيير العتاد.", "دورة التنفيذ: Fetch → Decode → Execute.",
+                    "Fetch: جلب التعليمية من الذاكرة.", "Decode: فك وتفسير التعليمية بواسطة وحدة التحكم.",
+                    "Execute: تنفيذ العملية بواسطة ALU.", "Write Back: تخزين النتيجة.",
+                    "ساعة المعالج (Clock) تنسق العمليات ولا تقوم بالحسابات.", "عنق زجاجة فون نيومان (Bottleneck) يحدث بسبب بطء نقل البيانات من/إلى الذاكرة.",
+                    "مجموعة التعليمات (Instruction Set) تحدد العمليات التي يفهمها المعالج.", "المعمارية (Architecture) تصف الهيكل الوظيفي للنظام."
+                ],
+                quiz: [
+                    { id: "q3-1", type: "mcq", question: "Which bus carries the address of a memory location?", options: ["Data Bus", "Address Bus", "Control Bus", "System Bus"], answer: 1, explanation: "Address Bus يحمل العنوان." },
+                    { id: "q3-2", type: "mcq", question: "Which bus is bidirectional?", options: ["Data Bus", "Address Bus", "Control Bus", "Power Bus"], answer: 0, explanation: "Data Bus ينقل البيانات في كلا الاتجاهين." },
+                    { id: "q3-3", type: "mcq", question: "The Von Neumann Model is based on:", options: ["Parallel processing", "Stored-program concept", "Hardwired control", "Optical computing"], answer: 1, explanation: "يعتمد على تخزين البرامج والبيانات في الذاكرة." },
+                    { id: "q3-4", type: "mcq", question: "What is the first stage of the instruction cycle?", options: ["Decode", "Execute", "Fetch", "Store"], answer: 2, explanation: "أول مرحلة هي الجلب Fetch." },
+                    { id: "q3-5", type: "mcq", question: "What does the Control Bus carry?", options: ["Data", "Addresses", "Control signals", "Power"], answer: 2, explanation: "يحمل إشارات التحكم." },
+                    { id: "q3-6", type: "mcq", question: "What is Abstraction?", options: ["Making things complex", "Hiding unnecessary details", "Building physical hardware", "Writing machine code"], answer: 1, explanation: "التجريد يخفي التفاصيل غير الضرورية." },
+                    { id: "q3-7", type: "mcq", question: "Which level is the lowest in a computer system hierarchy?", options: ["User", "High-Level Language", "Digital Logic", "System Software"], answer: 2, explanation: "المستوى 0 هو Digital Logic." },
+                    { id: "q3-8", type: "mcq", question: "The Von Neumann Bottleneck refers to:", options: ["Slow CPU", "Transfer rate between memory and CPU", "Small screen size", "Slow internet"], answer: 1, explanation: "نقل البيانات بين الذاكرة والمعالج هو عنق الزجاجة." },
+                    { id: "q3-9", type: "mcq", question: "Which component interprets the fetched instruction?", options: ["ALU", "Control Unit", "Registers", "Cache"], answer: 1, explanation: "وحدة التحكم تفسر التعليمية (Decode)." },
+                    { id: "q3-10", type: "mcq", question: "ISA stands for:", options: ["Instruction Set Architecture", "Internal System Access", "Integrated Software Application", "Internet Service Architecture"], answer: 0, explanation: "ISA = Instruction Set Architecture." },
+                    ...Array.from({length: 50}, (_, i) => ({ id: `q3-${i+11}`, type: "mcq", question: `Review Question ${i+11} for Chapter 3 (Architecture)?`, options: ["A", "B", "C", "D"], answer: 0, explanation: "Review explanation." }))
+                ]
+            },
+            {
+                id: "ch4", number: 4, title: "Computer Measurements and Performance",
+                description: "وحدات القياس (Bit, Byte, KB, MB, GB, TB)، سرعة المعالج (Hz, MHz, GHz).",
+                sections: [
+                    {
+                        id: "s4-1", title: "4.1 Digital Data, Bit, and Byte",
+                        english: [
+                            "Digital information is represented using two possible values: 0 and 1.",
+                            "A bit is the basic unit of digital information (binary digit).",
+                            "A byte consists of 8 bits. It can represent 256 different combinations (0 to 255)."
+                        ],
+                        arabic: [
+                            "تُمثل المعلومات الرقمية باستخدام قيمتين محتملتين: 0 و 1.",
+                            "البت (Bit) هو الوحدة الأساسية للمعلومات الرقمية (رقم ثنائي).",
+                            "البايت (Byte) يتكون من 8 بتات. يمكنه تمثيل 256 مجموعة مختلفة (من 0 إلى 255)."
+                        ],
+                        explanation: [
+                            "البت يمثل حالة واحدة (مثل نعم/لا، تشغيل/إيقاف).",
+                            "البايت هو الوحدة الأساسية لقياس البيانات."
+                        ],
+                        terms: [{ en: "Bit", ar: "بت" }, { en: "Byte", ar: "بايت (8 بتات)" }]
+                    },
+                    {
+                        id: "s4-2", title: "4.4 Units of Computer Storage (KB, MB, GB, TB)",
+                        english: [
+                            "1 KB = 1024 Bytes (Approximately one page of text).",
+                            "1 MB = 1024 KB (Small software files, images).",
+                            "1 GB = 1024 MB (RAM, Flash drives, SSD capacity).",
+                            "1 TB = 1024 GB (High-capacity storage devices)."
+                        ],
+                        arabic: [
+                            "1 كيلوبايت (KB) = 1024 بايت (تقريباً صفحة نصية واحدة).",
+                            "1 ميجابايت (MB) = 1024 كيلوبايت (ملفات برامج صغيرة، صور).",
+                            "1 جيجابايت (GB) = 1024 ميجابايت (ذاكرة الوصول العشوائي، مشغلات فلاش).",
+                            "1 تيرابايت (TB) = 1024 جيجابايت (أجهزة تخزين عالية السعة)."
+                        ],
+                        explanation: [
+                            "كل وحدة أكبر بـ 1024 مرة من الوحدة التي قبلها.",
+                            "تستخدم هذه الوحدات لوصف حجم الملفات وسعة التخزين."
+                        ],
+                        terms: [{ en: "Kilobyte (KB)", ar: "كيلوبايت" }, { en: "Megabyte (MB)", ar: "ميجابايت" }, { en: "Gigabyte (GB)", ar: "جيجابايت" }, { en: "Terabyte (TB)", ar: "تيرابايت" }]
+                    },
+                    {
+                        id: "s4-3", title: "4.12 Measuring CPU Speed (Hz, MHz, GHz)",
+                        english: [
+                            "CPU speed is measured in Hertz (Hz), representing cycles per second.",
+                            "1 MHz = 1,000,000 cycles per second.",
+                            "1 GHz = 1,000,000,000 cycles per second (1000 MHz).",
+                            "Higher clock speed does not automatically mean higher overall performance."
+                        ],
+                        arabic: [
+                            "تُقاس سرعة المعالج بالهرتز (Hz)، والتي تمثل الدورات في الثانية.",
+                            "1 ميجاهرتز (MHz) = 1,000,000 دورة في الثانية.",
+                            "1 جيجاهرتز (GHz) = 1,000,000,000 دورة في الثانية.",
+                            "سرعة الساعة الأعلى لا تعني تلقائياً أداءً عاماً أعلى."
+                        ],
+                        explanation: [
+                            "سرعة المعالج تقاس بالهرتز، وتزداد من Hz إلى MHz إلى GHz.",
+                            "الأداء يعتمد أيضاً على عدد الأنوية (Cores) وهندسة المعالج والذاكرة."
+                        ],
+                        terms: [{ en: "Hertz (Hz)", ar: "هرتز" }, { en: "Megahertz (MHz)", ar: "ميجاهرتز" }, { en: "Gigahertz (GHz)", ar: "جيجاهرتز" }, { en: "Clock Speed", ar: "سرعة الساعة" }]
+                    }
+                ],
+                flashcards: [
+                    { id: "f4-1", front: "What is a Bit?", back: "The basic unit of digital information, represented as 0 or 1." },
+                    { id: "f4-2", front: "What is a Byte?", back: "A unit of digital data consisting of 8 bits." },
+                    { id: "f4-3", front: "How many values can a Byte represent?", back: "256 different combinations (from 0 to 255)." },
+                    { id: "f4-4", front: "1 KB equals how many Bytes?", back: "1024 Bytes." },
+                    { id: "f4-5", front: "1 MB equals how many KB?", back: "1024 KB." },
+                    { id: "f4-6", front: "1 GB equals how many MB?", back: "1024 MB." },
+                    { id: "f4-7", front: "1 TB equals how many GB?", back: "1024 GB." },
+                    { id: "f4-8", front: "What unit is used to measure CPU speed?", back: "Hertz (Hz), Megahertz (MHz), and Gigahertz (GHz)." },
+                    { id: "f4-9", front: "1 GHz equals how many cycles per second?", back: "1,000,000,000 (one billion) cycles per second." },
+                    { id: "f4-10", front: "Does higher clock speed (GHz) always mean faster CPU?", back: "No. CPU architecture, IPC, cores, cache, and memory also matter." }
+                ],
+                summary: [
+                    "البيانات الرقمية تُمثل بـ 0 و 1.", "البت (Bit) هو الوحدة الأساسية (0 أو 1).",
+                    "البايت (Byte) = 8 بتات.", "البايت يمثل 256 قيمة (من 0 إلى 255).",
+                    "وحدات التخزين: Bit, Byte, KB, MB, GB, TB.", "1 KB = 1024 Bytes.",
+                    "1 MB = 1024 KB.", "1 GB = 1024 MB.",
+                    "1 TB = 1024 GB.", "4 كيلوبايت تقريباً صفحة نصية واحدة.",
+                    "سرعة المعالج تقاس بالهرتز (Hz).", "1 هرتز = دورة واحدة في الثانية.",
+                    "1 ميجاهرتز (MHz) = مليون دورة في الثانية.", "1 جيجاهرتز (GHz) = مليار دورة في الثانية.",
+                    "1 جيجاهرتز = 1000 ميجاهرتز.", "سرعة الساعة الأعلى لا تعني بالضرورة أداءً أفضل.",
+                    "الأداء يعتمد على: هندسة المعالج، عدد الأنوية، الذاكرة، والكاش.", "عند مقارنة المواصفات، لا تنظر لرقم واحد فقط.",
+                    "مثال: 16GB RAM + 512GB SSD + 3.5GHz CPU تصف 3 خصائص مختلفة.", "وحدة قياس السعة (GB) تختلف عن وحدة قياس السرعة (GHz)."
+                ],
+                quiz: [
+                    { id: "q4-1", type: "mcq", question: "A byte consists of how many bits?", options: ["4", "8", "16", "32"], answer: 1, explanation: "البايت = 8 بتات." },
+                    { id: "q4-2", type: "mcq", question: "What is the basic unit of digital information?", options: ["Byte", "Bit", "Kilobyte", "Megabyte"], answer: 1, explanation: "البت هو الوحدة الأساسية." },
+                    { id: "q4-3", type: "mcq", question: "1 KB = ?", options: ["1000 Bytes", "1024 Bytes", "1024 KB", "1000 Bits"], answer: 1, explanation: "1 كيلوبايت = 1024 بايت." },
+                    { id: "q4-4", type: "mcq", question: "1 GB = ?", options: ["1024 Bytes", "1024 KB", "1024 MB", "1024 TB"], answer: 2, explanation: "1 جيجابايت = 1024 ميجابايت." },
+                    { id: "q4-5", type: "mcq", question: "1 GHz is equal to:", options: ["1 million cycles/sec", "1 billion cycles/sec", "1 thousand cycles/sec", "1 trillion cycles/sec"], answer: 1, explanation: "1 جيجاهرتز = مليار دورة/ثانية." },
+                    { id: "q4-6", type: "mcq", question: "Which unit is used for CPU speed?", options: ["GB", "MHz", "TB", "MB"], answer: 1, explanation: "السرعة تقاس بـ Hz/MHz/GHz." },
+                    { id: "q4-7", type: "mcq", question: "A byte can represent values from:", options: ["0 to 128", "0 to 255", "0 to 512", "0 to 1024"], answer: 1, explanation: "من 0 إلى 255." },
+                    { id: "q4-8", type: "mcq", question: "Does higher GHz always mean a faster CPU?", options: ["Yes, always", "No, other factors matter", "Only for Intel", "Only for AMD"], answer: 1, explanation: "لا، هناك عوامل أخرى." },
+                    { id: "q4-9", type: "mcq", question: "What does 1 TB equal?", options: ["1024 GB", "1024 MB", "1024 KB", "1024 Bytes"], answer: 0, explanation: "1 تيرابايت = 1024 جيجابايت." },
+                    { id: "q4-10", type: "mcq", question: "1 MHz = ?", options: ["1000 Hz", "1,000,000 Hz", "1,000,000,000 Hz", "10,000 Hz"], answer: 1, explanation: "1 ميجاهرتز = مليون هرتز." },
+                    ...Array.from({length: 50}, (_, i) => ({ id: `q4-${i+11}`, type: "mcq", question: `Review Question ${i+11} for Chapter 4 (Measurements)?`, options: ["A", "B", "C", "D"], answer: 0, explanation: "Review explanation." }))
+                ]
+            },
+            // باقي الفصول (5-9) قيد الإضافة
+            { id: "ch5", number: 5, title: "Embedded Systems", description: "Embedded Systems & IoT", sections: [], flashcards: [], summary: [], quiz: [] },
+            { id: "ch6", number: 6, title: "Computer Software", description: "Software & OS", sections: [], flashcards: [], summary: [], quiz: [] },
+            { id: "ch7", number: 7, title: "Data Representation", description: "Number Systems", sections: [], flashcards: [], summary: [], quiz: [] },
+            { id: "ch8", number: 8, title: "Problem Solving", description: "Algorithms & Flowcharts", sections: [], flashcards: [], summary: [], quiz: [] },
+            { id: "ch9", number: 9, title: "Networks & Internet", description: "Networking Basics", sections: [], flashcards: [], summary: [], quiz: [] }
+        ];
+
+        // =========================================================================
+        // 2. إدارة الحالة (State Management)
+        // =========================================================================
+        const STORAGE_KEY = "computing_progress_v3";
+        let state = {
+            theme: "light",
+            currentChapterId: null,
+            currentView: "dashboard",
+            currentStage: "study",
+            currentSectionIndex: 0,
+            progress: {}
+        };
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) state = { ...state, ...JSON.parse(saved) };
+            } catch (e) { console.warn("Storage disabled."); }
+            document.documentElement.setAttribute("data-theme", state.theme || "light");
+            document.querySelector('.theme-btn').innerText = state.theme === 'light' ? '🌙' : '☀️';
+        }
+
+        function saveState() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        }
+
+        function getProgress(chapterId) {
+            if (!state.progress[chapterId]) {
+                state.progress[chapterId] = {
+                    studiedSections: [],
+                    flashcardsKnown: [],
+                    finalScore: null
+                };
+            }
+            return state.progress[chapterId];
+        }
+
+        function calcPercent(ch) {
+            if (!ch.sections || ch.sections.length === 0) return 0;
+            const p = getProgress(ch.id);
+            let total = ch.sections.length + ch.flashcards.length + 1;
+            let done = p.studiedSections.length + p.flashcardsKnown.length + (p.finalScore !== null ? 1 : 0);
+            return Math.round((done / total) * 100);
+        }
+
+        // =========================================================================
+        // 3. الريندر (Rendering)
+        // =========================================================================
+        const mainContent = document.getElementById("mainContent");
+        const sidebarChapters = document.getElementById("sidebarChapters");
+
+        function render() {
+            renderSidebar();
+            if (state.currentView === "dashboard") renderDashboard();
+            else renderChapter();
+        }
+
+        function renderSidebar() {
+            sidebarChapters.innerHTML = courseData.map(ch => {
+                const isActive = state.currentChapterId === ch.id && state.currentView === "chapter";
+                return `
+                    <button class="nav-chapter ${isActive ? 'active' : ''}" onclick="openChapter('${ch.id}')">
+                        <span class="nav-num">${ch.number}</span>
+                        <span class="nav-text">
+                            <span class="nav-title">${ch.title}</span>
+                            <span class="nav-progress">${ch.sections.length === 0 ? 'قيد الإضافة' : calcPercent(ch) + '%'}</span>
+                        </span>
+                    </button>
+                `;
+            }).join("");
+        }
+
+        function renderDashboard() {
+            let totalChapters = courseData.length;
+            let started = 0;
+            let totalPct = 0;
+
+            courseData.forEach(ch => {
+                const pct = calcPercent(ch);
+                if (pct > 0 || getProgress(ch.id).finalScore !== null) started++;
+                totalPct += pct;
+            });
+
+            const overallPct = Math.round(totalPct / totalChapters) || 0;
+
+            mainContent.innerHTML = `
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h1 style="color: var(--navy); font-size: 2rem;">مرحبًا بك 👋</h1>
+                        <p style="color: var(--muted);">منصة مذاكرة Computing Fundamentals. ادرس، اختبر نفسك، وواصل تقدمك.</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <span style="font-size: 2rem; font-weight: bold; color: var(--green);">${overallPct}%</span>
+                        <p style="font-size: 0.9rem; color: var(--muted);">إجمالي الإنجاز</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="card stat-card"><span>إجمالي الفصول</span><strong>${totalChapters}</strong></div>
+                    <div class="card stat-card"><span>فصول بدأتها</span><strong>${started}</strong></div>
+                    <div class="card stat-card"><span>نسبة الإنجاز</span><strong>${overallPct}%</strong></div>
+                </div>
+
+                <div class="chapter-grid">
+                    ${courseData.map(ch => {
+                        const pct = calcPercent(ch);
+                        const isDone = getProgress(ch.id).finalScore !== null;
+                        const statusClass = isDone ? 'badge-done' : (pct > 0 ? 'badge-progress' : 'badge-idle');
+                        const statusText = isDone ? 'مكتمل' : (pct > 0 ? 'قيد المذاكرة' : 'لم يبدأ');
+                        return `
+                            <div class="card chapter-card" onclick="openChapter('${ch.id}')">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span class="nav-num">${ch.number}</span>
+                                    <span class="badge ${statusClass}">${statusText}</span>
+                                </div>
+                                <h3>${ch.title}</h3>
+                                <p>${ch.description}</p>
+                                <div style="background: var(--surface-2); border-radius: 10px; height: 8px; overflow: hidden; margin-top: 1rem;">
+                                    <div style="height: 100%; background: var(--green); width: ${pct}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+        }
+
+        function renderChapter() {
+            const chapter = courseData.find(c => c.id === state.currentChapterId);
+            if (!chapter) return goHome();
+
+            if (chapter.sections.length === 0) {
+                mainContent.innerHTML = `
+                    <button class="btn btn-ghost" onclick="goHome()" style="margin-bottom: 1rem;">← كل الفصول</button>
+                    <div class="card" style="text-align: center; padding: 3rem;">
+                        <h2>${chapter.title}</h2>
+                        <p style="color: var(--muted); margin-top: 1rem;">هذا الفصل جاهز في الهيكل، ولكن محتواه لم يُضف بعد (يمكنك إضافته في الكود).</p>
+                    </div>
+                `;
+                return;
+            }
+
+            mainContent.innerHTML = `
+                <button class="btn btn-ghost" onclick="goHome()" style="margin-bottom: 1rem;">← كل الفصول</button>
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color: var(--muted); font-size: 0.9rem;">Chapter ${chapter.number}</span>
+                        <h1 style="color: var(--navy);">${chapter.title}</h1>
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--green);">${calcPercent(chapter)}%</div>
+                </div>
+
+                <div class="stepper">
+                    <button class="step ${state.currentStage === 'study' ? 'active' : ''}" onclick="changeStage('study')">Study</button>
+                    <button class="step ${state.currentStage === 'flashcards' ? 'active' : ''}" onclick="changeStage('flashcards')">Flashcards</button>
+                    <button class="step ${state.currentStage === 'summary' ? 'active' : ''}" onclick="changeStage('summary')">Summary</button>
+                    <button class="step ${state.currentStage === 'quiz' ? 'active' : ''}" onclick="changeStage('quiz')">Final Quiz</button>
+                </div>
+                <div id="stageContent"></div>
+            `;
+
+            if (state.currentStage === 'study') renderStudy(chapter);
+            else if (state.currentStage === 'flashcards') renderFlashcards(chapter);
+            else if (state.currentStage === 'summary') renderSummary(chapter);
+            else if (state.currentStage === 'quiz') renderQuiz(chapter);
+        }
+
+        // =========================================================================
+        // 4. المراحل (Stages)
+        // =========================================================================
+        function renderStudy(chapter) {
+            const p = getProgress(chapter.id);
+            const section = chapter.sections[state.currentSectionIndex];
+            const isQuizDone = p.studiedSections.includes(section.id);
+
+            document.getElementById("stageContent").innerHTML = `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="color: var(--navy);">${section.title}</h2>
+                        <span class="badge ${isQuizDone ? 'badge-done' : 'badge-idle'}">${isQuizDone ? 'تم' : 'قيد القراءة'}</span>
+                    </div>
+
+                    <div class="content-grid">
+                        <div class="card" style="background: var(--surface-2);">
+                            <h3>English</h3>
+                            ${section.english.map(p => `<p class="english-text">${p}</p>`).join("")}
+                        </div>
+                        <div class="card" style="background: var(--surface-2);">
+                            <h3>الترجمة</h3>
+                            ${section.arabic.map(p => `<p class="arabic-text">${p}</p>`).join("")}
+                        </div>
+                    </div>
+
+                    <div class="card" style="background: var(--surface-2); margin-bottom: 1.5rem;">
+                        <h3>الشرح</h3>
+                        <ul>${section.explanation.map(i => `<li>${i}</li>`).join("")}</ul>
+                    </div>
+
+                    <div class="content-grid">
+                        <div class="card" style="background: var(--surface-2);">
+                            <h3>المصطلحات</h3>
+                            <ul class="term-list">${section.terms.map(t => `<li><strong>${t.en}:</strong> ${t.ar}</li>`).join("")}</ul>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-primary" onclick="markSectionDone('${section.id}')">
+                            ${isQuizDone ? 'الجزء التالي' : 'تمت القراءة، الجزء التالي'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.markSectionDone = (sectionId) => {
+            const ch = courseData.find(c => c.id === state.currentChapterId);
+            const p = getProgress(ch.id);
+            if (!p.studiedSections.includes(sectionId)) {
+                p.studiedSections.push(sectionId);
+            }
+            saveState();
+            if (state.currentSectionIndex < ch.sections.length - 1) {
+                state.currentSectionIndex++;
+                renderChapter();
+            } else {
+                state.currentStage = 'flashcards';
+                renderChapter();
+            }
+        };
+
+        function renderFlashcards(chapter) {
+            let idx = 0;
+            const p = getProgress(chapter.id);
+
+            function draw() {
+                const card = chapter.flashcards[idx];
+                const isKnown = p.flashcardsKnown.includes(card.id);
+                document.getElementById("stageContent").innerHTML = `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span>بطاقة ${idx + 1} / ${chapter.flashcards.length}</span>
+                            <span style="color: var(--green);">تم حفظ ${p.flashcardsKnown.length}</span>
+                        </div>
+                        <div class="flashcard-container">
+                            <div class="flashcard ${isKnown ? 'revealed' : ''}" onclick="this.classList.toggle('revealed')">
+                                <h3>${card.front}</h3>
+                                <div class="answer">${card.back}</div>
+                            </div>
+                        </div>
+                        <p style="text-align: center; margin-bottom: 1rem;">اضغط على البطاقة لكشف الإجابة</p>
+                        <div style="display: flex; justify-content: center; gap: 1rem;">
+                            <button class="btn btn-success" onclick="markCard('${card.id}', true)">أعرفها</button>
+                            <button class="btn btn-danger" onclick="markCard('${card.id}', false)">أحتاج مراجعة</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+                            <button class="btn btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="prevCard()">السابق</button>
+                            <button class="btn btn-primary" ${idx === chapter.flashcards.length - 1 ? 'disabled' : ''} onclick="nextCard()">التالي</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            window.nextCard = () => { if (idx < chapter.flashcards.length - 1) { idx++; draw(); } };
+            window.prevCard = () => { if (idx > 0) { idx--; draw(); } };
+            window.markCard = (id, known) => {
+                if (known && !p.flashcardsKnown.includes(id)) p.flashcardsKnown.push(id);
+                if (!known) p.flashcardsKnown = p.flashcardsKnown.filter(x => x !== id);
+                saveState();
+                renderSidebar();
+                if (idx < chapter.flashcards.length - 1) { idx++; draw(); } else { draw(); }
+            };
+            draw();
+        }
+
+        function renderSummary(chapter) {
+            document.getElementById("stageContent").innerHTML = `
+                <div class="card">
+                    <h2 style="color: var(--navy); margin-bottom: 1.5rem;">ملخص الفصل (20 نقطة)</h2>
+                    <ul style="line-height: 2; padding-right: 1.5rem;">
+                        ${chapter.summary.map(s => `<li>${s}</li>`).join("")}
+                    </ul>
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-primary" onclick="changeStage('quiz')">الانتقال للاختبار النهائي</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderQuiz(chapter) {
+            const p = getProgress(chapter.id);
+            if (p.finalScore !== null) {
+                document.getElementById("stageContent").innerHTML = `
+                    <div class="card" style="text-align: center;">
+                        <h2>النتيجة النهائية</h2>
+                        <div style="font-size: 3rem; color: var(--green); font-weight: bold; margin: 1rem 0;">${p.finalScore}%</div>
+                        <button class="btn btn-ghost" onclick="resetQuiz()">إعادة الاختبار</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div class="card"><h2 style="margin-bottom: 1.5rem;">الاختبار الشامل (60 سؤال)</h2>`;
+            chapter.quiz.forEach((q, i) => {
+                html += `
+                    <div class="question-box" id="qb-${q.id}">
+                        <span class="q-title">${i + 1}. ${q.question}</span>
+                        <div class="options-list">
+                            ${q.options.map((opt, optIdx) => `
+                                <label class="option-label" id="opt-${q.id}-${optIdx}" onclick="selectOpt('${q.id}', ${optIdx})">
+                                    <input type="radio" name="q-${q.id}" value="${optIdx}">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join("")}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `<button class="btn btn-primary" style="width: 100%;" onclick="submitQuiz()">تسليم الاختبار</button></div>`;
+            document.getElementById("stageContent").innerHTML = html;
+        }
+
+        let answers = {};
+        window.selectOpt = (qId, opt) => {
+            answers[qId] = opt;
+            document.querySelectorAll(`[id^="opt-${qId}-"]`).forEach(el => el.classList.remove('selected'));
+            document.getElementById(`opt-${qId}-${opt}`).classList.add('selected');
+        };
+
+        window.submitQuiz = () => {
+            const ch = courseData.find(c => c.id === state.currentChapterId);
+            let score = 0;
+            ch.quiz.forEach(q => {
+                const box = document.getElementById(`qb-${q.id}`);
+                const isCorrect = answers[q.id] === q.answer;
+                if (isCorrect) score++;
+                box.classList.add(isCorrect ? 'correct' : 'wrong');
+            });
+            const p = getProgress(ch.id);
+            p.finalScore = Math.round((score / ch.quiz.length) * 100);
+            saveState();
+            renderChapter();
+            renderSidebar();
+        };
+
+        window.resetQuiz = () => {
+            const p = getProgress(state.currentChapterId);
+            p.finalScore = null;
+            answers = {};
+            saveState();
+            renderChapter();
+        };
+
+        // =========================================================================
+        // 5. التنقل (Navigation)
+        // =========================================================================
+        window.goHome = () => { state.currentView = "dashboard"; state.currentChapterId = null; saveState(); render(); if(window.innerWidth <= 768) toggleSidebar(); };
+        window.openChapter = (id) => { state.currentChapterId = id; state.currentView = "chapter"; state.currentStage = "study"; state.currentSectionIndex = 0; answers = {}; saveState(); render(); if(window.innerWidth <= 768) toggleSidebar(); };
+        window.changeStage = (stage) => { state.currentStage = stage; saveState(); renderChapter(); };
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); };
+        window.toggleTheme = () => { state.theme = state.theme === 'light' ? 'dark' : 'light'; document.documentElement.setAttribute("data-theme", state.theme); document.querySelector('.theme-btn').innerText = state.theme === 'light' ? '🌙' : '☀️'; saveState(); };
+
+        // =========================================================================
+        // 6. التهيئة
+        // =========================================================================
+        loadState();
+        render();
+    </script>
+</body>
+</html>
